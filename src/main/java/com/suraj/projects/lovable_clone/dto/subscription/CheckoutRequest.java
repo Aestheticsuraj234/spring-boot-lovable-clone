@@ -1,6 +1,6 @@
 package com.suraj.projects.lovable_clone.dto.subscription;
 
-public record CheckoutRequest(
-        Long planId
-) {
+import jakarta.validation.constraints.NotNull;
+
+public record CheckoutRequest(@NotNull Long planId) {
 }

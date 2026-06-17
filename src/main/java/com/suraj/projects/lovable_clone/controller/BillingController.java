@@ -3,6 +3,7 @@ package com.suraj.projects.lovable_clone.controller;
 import com.suraj.projects.lovable_clone.dto.subscription.*;
 import com.suraj.projects.lovable_clone.service.PlanService;
 import com.suraj.projects.lovable_clone.service.SubscriptionService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -32,7 +33,7 @@ public class BillingController {
 
     @PostMapping("/api/stripe/checkout")
     public ResponseEntity<CheckoutResponse> createCheckoutResponse(
-            @RequestBody CheckoutRequest request
+            @Valid @RequestBody CheckoutRequest request
     ) {
         Long userId = 1L;
         return ResponseEntity.ok(subscriptionService.createCheckoutSessionUrl(request, userId));

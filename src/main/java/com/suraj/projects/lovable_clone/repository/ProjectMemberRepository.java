@@ -12,7 +12,7 @@ import com.suraj.projects.lovable_clone.entity.ProjectMemberId;
 public interface ProjectMemberRepository extends JpaRepository<ProjectMember,  ProjectMemberId> {
 
     
-    List<ProjectMember> finbdByIdProjectId(Long projectId);
+    List<ProjectMember> findByIdProjectId(Long projectId);
 
 
 }
