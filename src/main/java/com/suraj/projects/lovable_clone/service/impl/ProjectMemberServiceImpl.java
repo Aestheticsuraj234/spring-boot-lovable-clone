@@ -61,8 +61,8 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
             throw new BadRequestException("Cannot assign owner role to a member");
         }
 
-        User invitee = userRepository.findByEmail(request.email())
-                .orElseThrow(() -> ResourceNotFoundException.of("User", request.email()));
+        User invitee = userRepository.findByUsername(request.username())
+                .orElseThrow(() -> ResourceNotFoundException.of("User", request.username()));
 
         if (invitee.getId().equals(userId)) {
             throw new BadRequestException("You cannot invite yourself to the project");

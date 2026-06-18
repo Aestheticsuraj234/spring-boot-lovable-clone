@@ -16,7 +16,7 @@ import java.time.Instant;
 
 @Entity
 @Table(name = "users", indexes = {
-        @Index(name = "idx_users_email", columnList = "email", unique = true),
+        @Index(name = "idx_users_username", columnList = "username", unique = true),
         @Index(name = "idx_users_deleted_at", columnList = "deleted_at")
 })
 @Getter
@@ -29,11 +29,11 @@ public class User {
     Long id;
 
     @Column(nullable = false, unique = true)
-    String email;
-    String passwordHash;
+    String username;
+    String password;
     String name;
 
-    String avatarUrl;
+
     Instant createdAt;
     Instant updatedAt;
 
