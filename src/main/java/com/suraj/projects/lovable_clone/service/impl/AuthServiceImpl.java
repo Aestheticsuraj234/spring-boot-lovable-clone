@@ -3,15 +3,43 @@ package com.suraj.projects.lovable_clone.service.impl;
 import com.suraj.projects.lovable_clone.dto.auth.AuthResponse;
 import com.suraj.projects.lovable_clone.dto.auth.LoginRequest;
 import com.suraj.projects.lovable_clone.dto.auth.SignupRequest;
+import com.suraj.projects.lovable_clone.dto.auth.UserProfileResponse;
+import com.suraj.projects.lovable_clone.entity.User;
+import com.suraj.projects.lovable_clone.repository.UserRepository;
 import com.suraj.projects.lovable_clone.service.AuthService;
+
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+
+import com.suraj.projects.lovable_clone.error.BadRequestException;
+import com.suraj.projects.lovable_clone.mapper.UserMapper;
+
+import org.springframework.boot.webmvc.autoconfigure.WebMvcProperties.Apiversion.Use;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
+@RequiredArgsConstructor
+@FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
 public class AuthServiceImpl implements AuthService {
+
+
+    UserRepository userRepository;
+    UserMapper userMapper;
+    PasswordEncoder passwordEncoder;
 
     @Override
     public AuthResponse signup(SignupRequest request) {
-        return null;
+        userRepository.findByUsername(request.username()).ifPresent(user-> {
+            throw new BadRequestException("Username already exists");
+        });
+
+        User user = userMapper.toEntity(request);
+        user.setPassword(passwordEncoder.encode(request.password()));
+        user = userRepository.save(user);
+
+        return new AuthResponse("dummy-token", userMapper.toUserProfileResponse(user));
     }
 
     @Override
