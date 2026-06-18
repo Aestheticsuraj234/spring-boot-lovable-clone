@@ -7,6 +7,7 @@ import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.Index;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.MapsId;
 import jakarta.persistence.Table;
@@ -21,7 +22,9 @@ import lombok.experimental.FieldDefaults;
 import java.time.Instant;
 
 @Entity
-@Table(name = "project_members")
+@Table(name = "project_members", indexes = {
+        @Index(name = "idx_project_members_user_id", columnList = "user_id")
+})
 @Getter
 @Setter
 @Builder
@@ -42,7 +45,7 @@ public class ProjectMember {
     User user;
 
     @Enumerated(EnumType.STRING)
-           @Column(nullable = false)
+    @Column(nullable = false)
     ProjectRole projectRole;
 
     Instant invitedAt;

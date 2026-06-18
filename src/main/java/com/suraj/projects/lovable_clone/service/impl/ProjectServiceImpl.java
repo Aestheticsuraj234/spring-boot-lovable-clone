@@ -5,6 +5,8 @@ import com.suraj.projects.lovable_clone.dto.project.ProjectResponse;
 import com.suraj.projects.lovable_clone.dto.project.ProjectSummaryResponse;
 import com.suraj.projects.lovable_clone.entity.Project;
 import com.suraj.projects.lovable_clone.entity.User;
+import com.suraj.projects.lovable_clone.error.ForbiddenException;
+import com.suraj.projects.lovable_clone.error.ResourceNotFoundException;
 import com.suraj.projects.lovable_clone.mapper.ProjectMapper;
 import com.suraj.projects.lovable_clone.repository.ProjectRepository;
 import com.suraj.projects.lovable_clone.repository.UserRepository;
@@ -17,7 +19,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.time.Instant;
-import java.util.Objects;
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
@@ -31,7 +32,8 @@ public class ProjectServiceImpl implements ProjectService {
     @Override
     public ProjectResponse createProject(ProjectRequest request, Long userId) {
 
-        User owner = userRepository.findById(userId).orElseThrow();
+        User owner = userRepository.findById(userId)
+                .orElseThrow(() -> ResourceNotFoundException.of("User", userId));
 
         Project project = Project.builder()
                 .name(request.name())
@@ -64,8 +66,8 @@ public class ProjectServiceImpl implements ProjectService {
     @Override
     public ProjectResponse updateProject(Long id, ProjectRequest request, Long userId) {
         Project project = getAccessibleProjectById(id, userId);
-        if(!project.getOwner().getId().equals(userId)) {
-            throw new RuntimeException("You are not the owner of this project");
+        if (!project.getOwner().getId().equals(userId)) {
+            throw new ForbiddenException("You are not the owner of this project");
         }
         project.setName(request.name());
         project = projectRepository.save(project);
@@ -76,8 +78,8 @@ public class ProjectServiceImpl implements ProjectService {
     public void softDelete(Long id, Long userId) {
         Project project = getAccessibleProjectById(id, userId);
 
-        if(!project.getOwner().getId().equals(userId)) {
-            throw new RuntimeException("You are not the owner of this project");
+        if (!project.getOwner().getId().equals(userId)) {
+            throw new ForbiddenException("You are not the owner of this project");
         }
 
         project.setDeletedAt(Instant.now());
@@ -87,6 +89,7 @@ public class ProjectServiceImpl implements ProjectService {
 
     // Internal Functions
     private Project getAccessibleProjectById(Long projectId, Long userId) {
-        return projectRepository.findAccessibleProjectById(projectId, userId).orElseThrow();
+        return projectRepository.findAccessibleProjectById(projectId, userId)
+                .orElseThrow(() -> ResourceNotFoundException.of("Project", projectId));
     }
 }

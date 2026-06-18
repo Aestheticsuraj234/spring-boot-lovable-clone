@@ -7,6 +7,10 @@ import com.suraj.projects.lovable_clone.entity.Project;
 import com.suraj.projects.lovable_clone.entity.ProjectMember;
 import com.suraj.projects.lovable_clone.entity.ProjectMemberId;
 import com.suraj.projects.lovable_clone.entity.User;
+import com.suraj.projects.lovable_clone.enums.ProjectRole;
+import com.suraj.projects.lovable_clone.error.BadRequestException;
+import com.suraj.projects.lovable_clone.error.ForbiddenException;
+import com.suraj.projects.lovable_clone.error.ResourceNotFoundException;
 import com.suraj.projects.lovable_clone.mapper.ProjectMemberMapper;
 import com.suraj.projects.lovable_clone.repository.ProjectMemberRepository;
 import com.suraj.projects.lovable_clone.repository.ProjectRepository;
@@ -40,43 +44,47 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
 
         memberResponseList.add(projectMemberMapper.toProjectMemberResponseFromOwner(project.getOwner()));
 
-        memberResponseList.addAll(projectMemberRepository.finbdByIdProjectId(projectId).stream()
+        memberResponseList.addAll(projectMemberRepository.findByIdProjectId(projectId).stream()
                 .map(projectMemberMapper::toProjectMemberResponseFromMember).toList());
         return memberResponseList;
     }
 
     @Override
     public MemberResponse inviteMember(Long projectId, InviteMemberRequest request, Long userId) {
-      Project project = getAccessibleProjectById(projectId, userId);
+        Project project = getAccessibleProjectById(projectId, userId);
 
-      if(!project.getOwner().getId().equals(userId)) {
-        throw new RuntimeException("You are not the owner of this project");
-      }
+        if (!project.getOwner().getId().equals(userId)) {
+            throw new ForbiddenException("You are not the owner of this project");
+        }
 
-      User invitee = userRepository.findByEmail(request.email()).orElseThrow();
+        if (request.role() == ProjectRole.OWNER) {
+            throw new BadRequestException("Cannot assign owner role to a member");
+        }
 
-     if(invitee.getId().equals(userId)){
-        throw new RuntimeException("You cannot invite yourself to the project");
-     }
+        User invitee = userRepository.findByEmail(request.email())
+                .orElseThrow(() -> ResourceNotFoundException.of("User", request.email()));
 
-     ProjectMemberId projectMemberId = new ProjectMemberId(projectId, invitee.getId());
+        if (invitee.getId().equals(userId)) {
+            throw new BadRequestException("You cannot invite yourself to the project");
+        }
 
-     if(projectMemberRepository.existsById(projectMemberId)){
-        throw new RuntimeException("Cannot invite once again");
-     }
+        ProjectMemberId projectMemberId = new ProjectMemberId(projectId, invitee.getId());
 
-     ProjectMember member = ProjectMember.builder()
-     .id(projectMemberId)
-     .project(project)
-     .user(invitee)
-     .projectRole(request.role())
-     .invitedAt(Instant.now())
-     .build();
+        if (projectMemberRepository.existsById(projectMemberId)) {
+            throw new BadRequestException("Cannot invite once again");
+        }
 
-     projectMemberRepository.save(member);
+        ProjectMember member = ProjectMember.builder()
+                .id(projectMemberId)
+                .project(project)
+                .user(invitee)
+                .projectRole(request.role())
+                .invitedAt(Instant.now())
+                .build();
 
-     return projectMemberMapper.toProjectMemberResponseFromMember(member);
-   
+        projectMemberRepository.save(member);
+
+        return projectMemberMapper.toProjectMemberResponseFromMember(member);
     }
 
     @Override
@@ -85,11 +93,16 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
         Project project = getAccessibleProjectById(projectId, userId);
 
         if (!project.getOwner().getId().equals(userId)) {
-            throw new RuntimeException("You are not the owner of this project");
+            throw new ForbiddenException("You are not the owner of this project");
+        }
+
+        if (request.role() == ProjectRole.OWNER) {
+            throw new BadRequestException("Cannot assign owner role to a member");
         }
 
         ProjectMemberId projectMemberId = new ProjectMemberId(projectId, memberId);
-        ProjectMember projectMember = projectMemberRepository.findById(projectMemberId).orElseThrow();
+        ProjectMember projectMember = projectMemberRepository.findById(projectMemberId)
+                .orElseThrow(() -> ResourceNotFoundException.of("ProjectMember", memberId));
 
         projectMember.setProjectRole(request.role());
         projectMemberRepository.save(projectMember);
@@ -102,11 +115,12 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
         Project project = getAccessibleProjectById(projectId, userId);
 
         if (!project.getOwner().getId().equals(userId)) {
-            throw new RuntimeException("You are not the owner of this project");
+            throw new ForbiddenException("You are not the owner of this project");
         }
 
         ProjectMemberId projectMemberId = new ProjectMemberId(projectId, memberId);
-        ProjectMember projectMember = projectMemberRepository.findById(projectMemberId).orElseThrow();
+        ProjectMember projectMember = projectMemberRepository.findById(projectMemberId)
+                .orElseThrow(() -> ResourceNotFoundException.of("ProjectMember", memberId));
 
         MemberResponse response = projectMemberMapper.toProjectMemberResponseFromMember(projectMember);
         projectMemberRepository.delete(projectMember);
@@ -114,8 +128,8 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
         return response;
     }
 
-    // Internal Functions
     private Project getAccessibleProjectById(Long projectId, Long userId) {
-        return projectRepository.findAccessibleProjectById(projectId, userId).orElseThrow();
+        return projectRepository.findAccessibleProjectById(projectId, userId)
+                .orElseThrow(() -> ResourceNotFoundException.of("Project", projectId));
     }
 }
