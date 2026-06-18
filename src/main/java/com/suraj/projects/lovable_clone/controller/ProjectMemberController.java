@@ -3,7 +3,6 @@ package com.suraj.projects.lovable_clone.controller;
 import com.suraj.projects.lovable_clone.dto.member.InviteMemberRequest;
 import com.suraj.projects.lovable_clone.dto.member.MemberResponse;
 import com.suraj.projects.lovable_clone.dto.member.UpdateMemberRoleRequest;
-import com.suraj.projects.lovable_clone.entity.ProjectMember;
 import com.suraj.projects.lovable_clone.service.ProjectMemberService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
